@@ -5,7 +5,6 @@ import { OrbitControls, Text, Sphere, Stars, Trail, Billboard, Html, Sparkles } 
 import * as THREE from 'three';
 import ExperienceSection from './ExperienceSection';
 
-
 // Utilidades
 const createTexture = (color) => {
   const size = 256;
