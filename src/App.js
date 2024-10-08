@@ -1,12 +1,12 @@
+// src/App.js
 import React from 'react';
+import { AppProvider } from './components/AppContext';
 import MusicUniverse from './components/MusicUniverse';
 
-function App() {
-  return (
-    <div className="App">
-      <MusicUniverse />
-    </div>
-  );
-}
+const App = () => (
+  <AppProvider>
+    <MusicUniverse />
+  </AppProvider>
+);
 
 export default App;

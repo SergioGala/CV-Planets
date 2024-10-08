@@ -1,9 +1,14 @@
-// Importaciones
-import React, { useRef, useState, useMemo, useCallback } from 'react';
+import React, { useRef, useMemo, useCallback, useEffect, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Text, Sphere, Stars, Trail, Billboard, Html, Sparkles } from '@react-three/drei';
 import * as THREE from 'three';
 import ExperienceSection from './ExperienceSection';
+import SkillsSection from './SkillsSection';
+import ProjectsSection from './ProjectsSection';
+import EducationSection from './EducationSection';
+import AchievementsSection from './AchievementsSection';
+import { useAppContext } from './AppContext';
+import MusicControl from './MusicControl';
 
 // Utilidades
 const createTexture = (color) => {
@@ -150,21 +155,22 @@ const Asteroids = () => {
   );
 };
 
-const CameraController = ({ target, setTraveling }) => {
-  const { camera } = useThree();
-  const vec = new THREE.Vector3();
+const CameraController = ({ resetCamera, setResetCamera }) => {
+  const { camera, gl } = useThree();
+  const controls = useRef();
 
   useFrame(() => {
-    if (target) {
-      vec.set(target[0], target[1], target[2]);
-      camera.position.lerp(vec, 0.05);
-      if (camera.position.distanceTo(vec) < 0.1) {
-        setTraveling(false);
+    if (resetCamera) {
+      camera.position.lerp(new THREE.Vector3(0, 20, 35), 0.05);
+      controls.current.target.set(0, 0, 0);
+      if (camera.position.distanceTo(new THREE.Vector3(0, 20, 35)) < 0.1) {
+        setResetCamera(false);
       }
     }
+    controls.current.update();
   });
 
-  return null;
+  return <OrbitControls ref={controls} args={[camera, gl.domElement]} />;
 };
 
 const VisibleOrbit = ({ radius, color }) => {
@@ -200,8 +206,8 @@ const Sun = ({ setActive }) => {
 const Planet = ({ position, color, name, setActive, orbitRadius, orbitSpeed, hasRings, description }) => {
   const groupRef = useRef();
   const meshRef = useRef();
-  const [hovered, setHovered] = useState(false);
-  const [angle, setAngle] = useState(Math.random() * Math.PI * 2);
+  const [hovered, setHovered] = React.useState(false);
+  const [angle, setAngle] = React.useState(Math.random() * Math.PI * 2);
   
   useFrame((state) => {
     setAngle((prevAngle) => prevAngle + orbitSpeed);
@@ -245,32 +251,33 @@ const Planet = ({ position, color, name, setActive, orbitRadius, orbitSpeed, has
 };
 
 const CVLegend = ({ planets }) => {
-    return (
-      <div style={{
-        position: 'absolute',
-        bottom: '20px',
-        right: '20px',
-        background: 'rgba(0, 0, 0, 0.7)',
-        padding: '10px',
-        borderRadius: '10px',
-        color: 'white',
-      }}>
-        <h3 style={{ marginTop: 0 }}>Secciones del CV</h3>
-        <ul style={{ listStyle: 'none', padding: 0 }}>
-          <li style={{ display: 'flex', alignItems: 'center', marginBottom: '5px' }}>
-            <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: '#FDB813', marginRight: '10px' }}></div>
-            Mi Perfil
+  return (
+    <div style={{
+      position: 'absolute',
+      bottom: '20px',
+      right: '20px',
+      background: 'rgba(0, 0, 0, 0.7)',
+      padding: '10px',
+      borderRadius: '10px',
+      color: 'white',
+    }}>
+      <h3 style={{ marginTop: 0 }}>Secciones del CV</h3>
+      <ul style={{ listStyle: 'none', padding: 0 }}>
+        <li style={{ display: 'flex', alignItems: 'center', marginBottom: '5px' }}>
+          <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: '#FDB813', marginRight: '10px' }}></div>
+          Mi Perfil
+        </li>
+        {planets.map((planet, index) => (
+          <li key={index} style={{ display: 'flex', alignItems: 'center', marginBottom: '5px' }}>
+            <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: planet.color, marginRight: '10px' }}></div>
+            {planet.name}
           </li>
-          {planets.map((planet, index) => (
-            <li key={index} style={{ display: 'flex', alignItems: 'center', marginBottom: '5px' }}>
-              <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: planet.color, marginRight: '10px' }}></div>
-              {planet.name}
-            </li>
-          ))}
-        </ul>
-      </div>
-    );
-  };
+        ))}
+      </ul>
+    </div>
+  );
+};
+
 const PlanetSection = ({ name, color }) => {
   return (
     <div style={{
@@ -297,11 +304,32 @@ const PlanetSection = ({ name, color }) => {
   );
 };
 
+// Scene component
+const Scene = ({ handlePlanetClick, planets, resetCamera, setResetCamera }) => {
+  return (
+    <>
+      <ambientLight intensity={0.5} />
+      <directionalLight position={[5, 5, 5]} intensity={1.5} />
+      <pointLight position={[10, 10, 10]} intensity={1} />
+      <Stars radius={300} depth={60} count={20000} factor={7} saturation={0} fade />
+      <Asteroids />
+      <Sun setActive={handlePlanetClick} />
+      {planets.map((planet, index) => (
+        <React.Fragment key={index}>
+          <VisibleOrbit radius={planet.orbitRadius} color={planet.color} />
+          <Planet {...planet} setActive={handlePlanetClick} />
+        </React.Fragment>
+      ))}
+      <CameraController resetCamera={resetCamera} setResetCamera={setResetCamera} />
+      <fog attach="fog" args={['#000', 0, 50]} />
+    </>
+  );
+};
+
 // Componente principal MusicUniverse
 const MusicUniverse = () => {
-  const [active, setActive] = useState(null);
-  const [traveling, setTraveling] = useState(false);
-  const [cameraTarget, setCameraTarget] = useState(null);
+  const { currentView, setCurrentView, audioRef } = useAppContext();
+  const [resetCamera, setResetCamera] = useState(false);
 
   const planets = useMemo(() => [
     { name: 'Experiencia', color: '#FF6B6B', orbitRadius: 15, orbitSpeed: 0.0005, hasRings: false, description: "Años de experiencia en desarrollo web y móvil." },
@@ -311,51 +339,71 @@ const MusicUniverse = () => {
     { name: 'Logros', color: '#8B78E6', orbitRadius: 27, orbitSpeed: 0.0013, hasRings: true, description: "Reconocimientos y certificaciones en el campo." },
   ], []);
 
+  useEffect(() => {
+    audioRef.current = new Audio('/Color Me Blue.mp3');
+    audioRef.current.loop = true;
+    audioRef.current.volume = 0.5;
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = '';
+      }
+    };
+  }, [audioRef]);
+
   const handlePlanetClick = useCallback((name) => {
-    const planet = planets.find(p => p.name === name);
-    setCameraTarget(name === 'Mi Perfil' ? [0, 0, 0] : [planet.orbitRadius, 0, 0]);
-    setActive(name);
-    setTraveling(true);
-  }, [planets]);
+    if (name === 'Experiencia') {
+      setCurrentView('experience');
+    } else {
+      setCurrentView(name.toLowerCase());
+    }
+  }, [setCurrentView]);
+
+  const handleReturnToMain = useCallback(() => {
+    setCurrentView('main');
+    setResetCamera(true);
+  }, [setCurrentView]);
 
   const renderActiveSection = () => {
-    if (active === 'Experiencia') {
-      return <ExperienceSection />;
-    } else if (active === 'Mi Perfil') {
-      return <PlanetSection name={active} color="#FDB813" />;
-    } else {
-      const planet = planets.find(p => p.name === active);
-      return planet ? <PlanetSection name={active} color={planet.color} /> : null;
+    switch (currentView) {
+      case 'experience':
+        return <ExperienceSection onReturnToMain={handleReturnToMain} />;
+      case 'habilidades':
+        return <SkillsSection onReturnToMain={handleReturnToMain} />;
+      case 'proyectos':
+        return <ProjectsSection onReturnToMain={handleReturnToMain} />;
+      case 'educación':
+        return <EducationSection onReturnToMain={handleReturnToMain} />;
+      case 'logros':
+        return <AchievementsSection onReturnToMain={handleReturnToMain} />;
+      case 'mi perfil':
+        return <PlanetSection name="Mi Perfil" color="#FDB813" onReturnToMain={handleReturnToMain} />;
+      default:
+        return null;
     }
   };
 
   return (
     <div style={{ width: '100vw', height: '100vh', background: 'black', position: 'relative' }}>
-      <Canvas camera={{ position: [0, 20, 35], fov: 75 }}>
-        <ambientLight intensity={0.5} />
-        <directionalLight position={[5, 5, 5]} intensity={1.5} />
-        <pointLight position={[10, 10, 10]} intensity={1} />
-        <OrbitControls enabled={!traveling} />
-        <Stars radius={300} depth={60} count={20000} factor={7} saturation={0} fade />
-        <Asteroids />
-        <Sun setActive={handlePlanetClick} />
-        {planets.map((planet, index) => (
-          <React.Fragment key={index}>
-            <VisibleOrbit radius={planet.orbitRadius} color={planet.color} />
-            <Planet {...planet} setActive={handlePlanetClick} />
-          </React.Fragment>
-        ))}
-        <CameraController target={cameraTarget} setTraveling={setTraveling} />
-        <fog attach="fog" args={['#000', 0, 50]} />
-      </Canvas>
-      <CVLegend planets={planets} />
-      {active && !traveling && (
+      {currentView === 'main' && (
+        <Canvas camera={{ position: [0, 20, 35], fov: 75 }}>
+          <Scene 
+            handlePlanetClick={handlePlanetClick}
+            planets={planets}
+            resetCamera={resetCamera}
+            setResetCamera={setResetCamera}
+          />
+        </Canvas>
+      )}
+      {currentView === 'main' && <CVLegend planets={planets} />}
+      {currentView !== 'main' && (
         <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
           {renderActiveSection()}
         </div>
       )}
+      <MusicControl />
     </div>
   );
 };
-    
-    export default MusicUniverse;
+
+export default MusicUniverse;
