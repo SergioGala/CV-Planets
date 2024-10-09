@@ -1,6 +1,6 @@
 import React, { useRef, useMemo, useCallback, useEffect, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, Text, Sphere, Stars, Trail, Billboard, Html, Sparkles } from '@react-three/drei';
+import { OrbitControls, Text, Sphere, Stars, Trail, Billboard, Html, Sparkles, Box } from '@react-three/drei';
 import * as THREE from 'three';
 import ExperienceSection from './ExperienceSection';
 import SkillsSection from './SkillsSection';
@@ -11,6 +11,16 @@ import { useAppContext } from './AppContext';
 import MusicControl from './MusicControl';
 
 // Utilidades
+const Views = {
+  MAIN: 'main',
+  EXPERIENCE: 'experience',
+  SKILLS: 'skills',
+  PROJECTS: 'projects',
+  EDUCATION: 'education',
+  ACHIEVEMENTS: 'achievements',
+  PROFILE: 'profile',
+};
+
 const createTexture = (color) => {
   const size = 256;
   const canvas = document.createElement('canvas');
@@ -187,7 +197,7 @@ const Sun = ({ setActive }) => {
   const sunTexture = useMemo(() => createTexture('#FDB813'), []);
   
   return (
-    <group onClick={() => setActive('Mi Perfil')}>
+    <group onClick={() => setActive(Views.PROFILE)}>
       <Sphere args={[3, 64, 64]} position={[0, 0, 0]}>
         <meshBasicMaterial map={sunTexture} />
       </Sphere>
@@ -203,7 +213,7 @@ const Sun = ({ setActive }) => {
   );
 };
 
-const Planet = ({ position, color, name, setActive, orbitRadius, orbitSpeed, hasRings, description }) => {
+const Planet = ({ position, color, name, setActive, orbitRadius, orbitSpeed, hasRings, description, view }) => {
   const groupRef = useRef();
   const meshRef = useRef();
   const [hovered, setHovered] = React.useState(false);
@@ -227,7 +237,7 @@ const Planet = ({ position, color, name, setActive, orbitRadius, orbitSpeed, has
           ref={meshRef}
           onPointerOver={() => setHovered(true)}
           onPointerOut={() => setHovered(false)}
-          onClick={() => setActive(name)}
+          onClick={() => setActive(view)}
         >
           <meshStandardMaterial map={texture} emissive={color} emissiveIntensity={hovered ? 0.5 : 0.2} />
         </Sphere>
@@ -250,31 +260,64 @@ const Planet = ({ position, color, name, setActive, orbitRadius, orbitSpeed, has
   );
 };
 
-const CVLegend = ({ planets }) => {
+const CVLegend3D = ({ planets }) => {
+  const groupRef = useRef();
+
+  useFrame(({ camera }) => {
+    if (groupRef.current) {
+      groupRef.current.quaternion.copy(camera.quaternion);
+    }
+  });
+
   return (
-    <div style={{
-      position: 'absolute',
-      bottom: '20px',
-      right: '20px',
-      background: 'rgba(0, 0, 0, 0.7)',
-      padding: '10px',
-      borderRadius: '10px',
-      color: 'white',
-    }}>
-      <h3 style={{ marginTop: 0 }}>Secciones del CV</h3>
-      <ul style={{ listStyle: 'none', padding: 0 }}>
-        <li style={{ display: 'flex', alignItems: 'center', marginBottom: '5px' }}>
-          <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: '#FDB813', marginRight: '10px' }}></div>
+    <group ref={groupRef} position={[14, 10, 20]}>
+      <Box args={[10, 12, 0.2]} position={[0, 0, -0.1]}>
+        <meshStandardMaterial color="black" transparent opacity={0.7} />
+      </Box>
+      <Text position={[0, 5, 0]} fontSize={0.7} color="white">
+        Secciones del CV
+      </Text>
+      <group position={[0, 3.5, 0]}>
+        <Sphere args={[0.2]} position={[-4, 0, 0]}>
+          <meshStandardMaterial color="#FDB813" />
+        </Sphere>
+        <Text position={[-2, 0, 0]} fontSize={0.5} color="white" anchorX="left">
           Mi Perfil
-        </li>
-        {planets.map((planet, index) => (
-          <li key={index} style={{ display: 'flex', alignItems: 'center', marginBottom: '5px' }}>
-            <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: planet.color, marginRight: '10px' }}></div>
+        </Text>
+      </group>
+      {planets.map((planet, index) => (
+        <group key={index} position={[0, 2.5 - index * 1.2, 0]}>
+          <Sphere args={[0.2]} position={[-4, 0, 0]}>
+            <meshStandardMaterial color={planet.color} />
+          </Sphere>
+          <Text position={[-2, 0, 0]} fontSize={0.5} color="white" anchorX="left">
             {planet.name}
-          </li>
-        ))}
-      </ul>
-    </div>
+          </Text>
+        </group>
+      ))}
+    </group>
+  );
+};
+
+const Scene = ({ handleViewChange, planets, resetCamera, setResetCamera }) => {
+  return (
+    <>
+      <ambientLight intensity={0.5} />
+      <directionalLight position={[5, 5, 5]} intensity={1.5} />
+      <pointLight position={[10, 10, 10]} intensity={1} />
+      <Stars radius={300} depth={60} count={20000} factor={7} saturation={0} fade />
+      <Asteroids />
+      <Sun setActive={handleViewChange} />
+      {planets.map((planet, index) => (
+        <React.Fragment key={index}>
+          <VisibleOrbit radius={planet.orbitRadius} color={planet.color} />
+          <Planet {...planet} setActive={handleViewChange} />
+        </React.Fragment>
+      ))}
+      <CVLegend3D planets={planets} />
+      <CameraController resetCamera={resetCamera} setResetCamera={setResetCamera} />
+      <fog attach="fog" args={['#000', 0, 50]} />
+    </>
   );
 };
 
@@ -304,27 +347,6 @@ const PlanetSection = ({ name, color }) => {
   );
 };
 
-// Scene component
-const Scene = ({ handlePlanetClick, planets, resetCamera, setResetCamera }) => {
-  return (
-    <>
-      <ambientLight intensity={0.5} />
-      <directionalLight position={[5, 5, 5]} intensity={1.5} />
-      <pointLight position={[10, 10, 10]} intensity={1} />
-      <Stars radius={300} depth={60} count={20000} factor={7} saturation={0} fade />
-      <Asteroids />
-      <Sun setActive={handlePlanetClick} />
-      {planets.map((planet, index) => (
-        <React.Fragment key={index}>
-          <VisibleOrbit radius={planet.orbitRadius} color={planet.color} />
-          <Planet {...planet} setActive={handlePlanetClick} />
-        </React.Fragment>
-      ))}
-      <CameraController resetCamera={resetCamera} setResetCamera={setResetCamera} />
-      <fog attach="fog" args={['#000', 0, 50]} />
-    </>
-  );
-};
 
 // Componente principal MusicUniverse
 const MusicUniverse = () => {
@@ -332,11 +354,11 @@ const MusicUniverse = () => {
   const [resetCamera, setResetCamera] = useState(false);
 
   const planets = useMemo(() => [
-    { name: 'Experiencia', color: '#FF6B6B', orbitRadius: 15, orbitSpeed: 0.0005, hasRings: false, description: "Años de experiencia en desarrollo web y móvil." },
-    { name: 'Habilidades', color: '#4ECDC4', orbitRadius: 18, orbitSpeed: 0.0007, hasRings: true, description: "Experto en JavaScript, React, y Node.js." },
-    { name: 'Proyectos', color: '#45B7D1', orbitRadius: 21, orbitSpeed: 0.0009, hasRings: false, description: "Portfolio de proyectos innovadores." },
-    { name: 'Educación', color: '#F7B731', orbitRadius: 24, orbitSpeed: 0.0011, hasRings: true, description: "Grado en Ingeniería Informática y formación continua." },
-    { name: 'Logros', color: '#8B78E6', orbitRadius: 27, orbitSpeed: 0.0013, hasRings: true, description: "Reconocimientos y certificaciones en el campo." },
+    { name: 'Experiencia', color: '#FF6B6B', orbitRadius: 15, orbitSpeed: 0.0005, hasRings: false, description: "Años de experiencia en desarrollo web.", view: Views.EXPERIENCE },
+    { name: 'Tech Stack', color: '#4ECDC4', orbitRadius: 18, orbitSpeed: 0.0007, hasRings: true, description: "Experto en JavaScript, React, y Node.js.", view: Views.SKILLS },
+    { name: 'Proyectos', color: '#45B7D1', orbitRadius: 21, orbitSpeed: 0.0009, hasRings: false, description: "Portfolio de proyectos innovadores.", view: Views.PROJECTS },
+    { name: 'Educación', color: '#F7B731', orbitRadius: 24, orbitSpeed: 0.0011, hasRings: true, description: "Grado en Ingeniería Informática y formación continua.", view: Views.EDUCATION },
+    { name: 'Logros', color: '#8B78E6', orbitRadius: 27, orbitSpeed: 0.0013, hasRings: true, description: "Reconocimientos y certificaciones en el campo.", view: Views.ACHIEVEMENTS },
   ], []);
 
   useEffect(() => {
@@ -351,32 +373,29 @@ const MusicUniverse = () => {
     };
   }, [audioRef]);
 
-  const handlePlanetClick = useCallback((name) => {
-    if (name === 'Experiencia') {
-      setCurrentView('experience');
-    } else {
-      setCurrentView(name.toLowerCase());
-    }
+  const handleViewChange = useCallback((view) => {
+    setCurrentView(view);
+    setResetCamera(true);
   }, [setCurrentView]);
 
   const handleReturnToMain = useCallback(() => {
-    setCurrentView('main');
+    setCurrentView(Views.MAIN);
     setResetCamera(true);
   }, [setCurrentView]);
 
   const renderActiveSection = () => {
     switch (currentView) {
-      case 'experience':
+      case Views.EXPERIENCE:
         return <ExperienceSection onReturnToMain={handleReturnToMain} />;
-      case 'habilidades':
+      case Views.SKILLS:
         return <SkillsSection onReturnToMain={handleReturnToMain} />;
-      case 'proyectos':
+      case Views.PROJECTS:
         return <ProjectsSection onReturnToMain={handleReturnToMain} />;
-      case 'educación':
+      case Views.EDUCATION:
         return <EducationSection onReturnToMain={handleReturnToMain} />;
-      case 'logros':
+      case Views.ACHIEVEMENTS:
         return <AchievementsSection onReturnToMain={handleReturnToMain} />;
-      case 'mi perfil':
+      case Views.PROFILE:
         return <PlanetSection name="Mi Perfil" color="#FDB813" onReturnToMain={handleReturnToMain} />;
       default:
         return null;
@@ -385,21 +404,17 @@ const MusicUniverse = () => {
 
   return (
     <div style={{ width: '100vw', height: '100vh', background: 'black', position: 'relative' }}>
-      {currentView === 'main' && (
+      {currentView === Views.MAIN ? (
         <Canvas camera={{ position: [0, 20, 35], fov: 75 }}>
           <Scene 
-            handlePlanetClick={handlePlanetClick}
+            handleViewChange={handleViewChange}
             planets={planets}
             resetCamera={resetCamera}
             setResetCamera={setResetCamera}
           />
         </Canvas>
-      )}
-      {currentView === 'main' && <CVLegend planets={planets} />}
-      {currentView !== 'main' && (
-        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
-          {renderActiveSection()}
-        </div>
+      ) : (
+        renderActiveSection()
       )}
       <MusicControl />
     </div>
