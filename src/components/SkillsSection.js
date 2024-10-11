@@ -18,8 +18,8 @@ const City = () => {
     return (
       <group ref={groupRef}>
         <CityBase />
-        <ReactBuilding position={[-40, 0, -40]} />
-        <TypeScriptBuilding position={[-80, 0, -40]} /> {/* Colocado entre React y Python */}
+        <ReactBuilding position={[-60, 0, -40]} />
+        <TypeScriptBuilding position={[-20, 0, -40]} /> {/* Colocado entre React y Python */}
         <PythonBuilding position={[60, 0, -40]} />
       </group>
     );

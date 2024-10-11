@@ -64,7 +64,7 @@ const PythonBuilding = ({ position }) => {
     <group position={position} ref={mainRef}>
       {/* Base del edificio */}
       <Cylinder args={[30, 35, 10, 32]} position={[0, 5, 0]}>
-        <meshStandardMaterial color="#1E2736" metalness={0.8} roughness={0.2} />
+        <meshStandardMaterial color="#3776AB" metalness={0.8} roughness={0.2} />
       </Cylinder>
 
       {/* Cuerpo principal (serpiente) */}
