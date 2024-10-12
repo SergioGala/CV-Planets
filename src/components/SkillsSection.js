@@ -1,31 +1,46 @@
-import React, { Suspense, useRef } from 'react';
+import React, { Suspense, useRef, useCallback } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera, Stars } from '@react-three/drei';
+import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
+import SkyBox from "./SkyBox";
 import CityBase from './CityBase';
 import ReactBuilding from './ReactBuilding';
 import PythonBuilding from './PythonBuilding';
 import TypeScriptBuilding from './TypeScriptBuilding';
-import SkyBox from './SkyBox';
+import AngularBuilding from './AngularBuilding';
+import JavaScriptBuilding from './JavaScriptBuilding';
+import NextJSBuilding from './NextJSBuilding';
+import StyledTailwindBuilding from './StyledTailwindBuilding';
 
 const City = () => {
-    const groupRef = useRef();
-  
-    useFrame((state) => {
-      const t = state.clock.getElapsedTime();
-      groupRef.current.rotation.y = Math.sin(t * 0.05) * 0.05;
-    });
-  
-    return (
-      <group ref={groupRef}>
-        <CityBase />
-        <ReactBuilding position={[-60, 0, -40]} />
-        <TypeScriptBuilding position={[-20, 0, -40]} /> {/* Colocado entre React y Python */}
-        <PythonBuilding position={[60, 0, -40]} />
-      </group>
-    );
-  };
+  const groupRef = useRef();
+
+  useFrame((state) => {
+    const t = state.clock.getElapsedTime();
+    groupRef.current.rotation.y = Math.sin(t * 0.05) * 0.05;
+  });
+
+  const buildingSpacing = 140; // Adjust this value to change the space between buildings
+
+  return (
+    <group ref={groupRef}>
+      <CityBase />
+
+      {/* All buildings in a single row */}
+      <ReactBuilding position={[-3 * buildingSpacing, 0, 0]} />
+      <AngularBuilding position={[-2 * buildingSpacing, 0, 0]} />
+      <JavaScriptBuilding position={[-1 * buildingSpacing, 0, 0]} />
+      <TypeScriptBuilding position={[0, 0, 0]} />
+      <PythonBuilding position={[1 * buildingSpacing, 0, 0]} />
+      <NextJSBuilding position={[2 * buildingSpacing, 0, 0]} />
+      <StyledTailwindBuilding position={[3 * buildingSpacing, 0, 0]} />
+    </group>
+  );
+};
 
 const SkillsSection = ({ onReturnToMain }) => {
+    const handleReturnToMain = useCallback(() => {
+      onReturnToMain();
+    }, [onReturnToMain]);
   return (
     <div style={{
       width: '100%',
@@ -34,19 +49,18 @@ const SkillsSection = ({ onReturnToMain }) => {
       position: 'relative'
     }}>
       <Canvas shadows gl={{ antialias: true, powerPreference: "high-performance" }}>
-        <PerspectiveCamera makeDefault position={[100, 60, 100]} fov={60} />
-        <OrbitControls target={[-20, 30, -20]} maxPolarAngle={Math.PI / 2} />
+        <PerspectiveCamera makeDefault position={[0, 200, 600]} fov={60} />
+        <OrbitControls target={[0, 50, 0]} maxPolarAngle={Math.PI / 2} />
         <ambientLight intensity={0.1} />
-        <directionalLight position={[50, 50, 25]} intensity={1} castShadow />
-        <pointLight position={[-40, 60, -40]} intensity={1} color="#61DAFB" />
+        <directionalLight position={[100, 100, 50]} intensity={1} castShadow />
+        <pointLight position={[-80, 120, -80]} intensity={1} color="#61DAFB" />
         <Suspense fallback={null}>
-          <SkyBox />
           <City />
         </Suspense>
-        <Stars radius={300} depth={50} count={5000} factor={4} saturation={0} fade />
+        <SkyBox />
       </Canvas>
       <button
-        onClick={onReturnToMain}
+       onClick={handleReturnToMain}
         style={{
           position: 'absolute',
           bottom: '20px',

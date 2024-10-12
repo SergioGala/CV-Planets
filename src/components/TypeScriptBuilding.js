@@ -89,15 +89,14 @@ const TypeScriptBuilding = ({ position }) => {
 
       {/* TypeScript text at the top */}
       <Text
-        position={[0, 85, 0]}
-        rotation={[0, Math.PI, 0,2]}
-        fontSize={5}
-        color="#FFFFFF"
-        anchorX="center"
-        anchorY="middle"
-      >
-        TypeScript
-      </Text>
+  position={[0, 85, 0]}
+  fontSize={5}
+  color="#FFFFFF"
+  anchorX="center"
+  anchorY="middle"
+>
+  TypeScript
+</Text>
 
       {/* Glowing spheres representing types */}
       {[...Array(5)].map((_, i) => (

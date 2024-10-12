@@ -1,24 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useThree } from '@react-three/fiber';
 import { useTexture } from '@react-three/drei';
 import * as THREE from 'three';
 
+
 const SkyBox = () => {
   const { scene, gl } = useThree();
-  const [textureLoaded, setTextureLoaded] = useState(false);
   
-  const texture = useTexture('/textures/Galaxy 4k HDRI_0.png', 
-    (loadedTexture) => {
-      console.log('Texture loaded successfully');
-      setTextureLoaded(true);
-    },
-    (error) => {
-      console.error('Error loading texture:', error);
-    }
-  );
-  
+  const texture = useTexture('/textures/Galaxy 4k HDRI_0.png');
+
   useEffect(() => {
-    if (textureLoaded) {
+    if (texture) {
       console.log('Applying texture to scene');
       texture.mapping = THREE.EquirectangularReflectionMapping;
       texture.colorSpace = THREE.SRGBColorSpace;
@@ -36,7 +28,7 @@ const SkyBox = () => {
         scene.background.dispose();
       }
     };
-  }, [scene, gl, texture, textureLoaded]);
+  }, [scene, gl, texture]);
 
   return null;
 };
