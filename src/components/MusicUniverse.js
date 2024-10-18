@@ -272,25 +272,46 @@ const CVLegend3D = ({ planets }) => {
   return (
     <group ref={groupRef} position={[14, 10, 20]}>
       <Box args={[10, 12, 0.2]} position={[0, 0, -0.1]}>
-        <meshStandardMaterial color="black" transparent opacity={0.7} />
+        <meshBasicMaterial color="black" transparent opacity={0.7} depthWrite={false} />
       </Box>
-      <Text position={[0, 5, 0]} fontSize={0.7} color="white">
+      <Text
+        position={[0, 5, 0]}
+        fontSize={0.7}
+        color="white"
+        anchorX="center"
+        anchorY="middle"
+        renderOrder={1}
+      >
         Secciones del CV
       </Text>
       <group position={[0, 3.5, 0]}>
         <Sphere args={[0.2]} position={[-4, 0, 0]}>
-          <meshStandardMaterial color="#FDB813" />
+          <meshBasicMaterial color="#FDB813" />
         </Sphere>
-        <Text position={[-2, 0, 0]} fontSize={0.5} color="white" anchorX="left">
+        <Text
+          position={[-2, 0, 0]}
+          fontSize={0.5}
+          color="white"
+          anchorX="left"
+          anchorY="middle"
+          renderOrder={1}
+        >
           Mi Perfil
         </Text>
       </group>
       {planets.map((planet, index) => (
         <group key={index} position={[0, 2.5 - index * 1.2, 0]}>
           <Sphere args={[0.2]} position={[-4, 0, 0]}>
-            <meshStandardMaterial color={planet.color} />
+            <meshBasicMaterial color={planet.color} />
           </Sphere>
-          <Text position={[-2, 0, 0]} fontSize={0.5} color="white" anchorX="left">
+          <Text
+            position={[-2, 0, 0]}
+            fontSize={0.5}
+            color="white"
+            anchorX="left"
+            anchorY="middle"
+            renderOrder={1}
+          >
             {planet.name}
           </Text>
         </group>
