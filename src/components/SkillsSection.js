@@ -209,10 +209,11 @@ const SkillsSection = ({ onReturnToMain }) => {
 
   return (
     <div style={{
-      width: '100%',
+      width: '100vw',
       height: '100vh',
       background: 'black',
-      position: 'relative'
+      position: 'relative',
+      overflow: 'hidden' // Evita barras de desplazamiento
     }}>
       <Canvas
         shadows
@@ -274,7 +275,15 @@ const SkillsSection = ({ onReturnToMain }) => {
       >
         Resetear Vista
       </button>
-      <BaseStyleSelector currentStyle={baseStyle} onStyleChange={handleBaseStyleChange} />
+      <div style={{
+        position: 'absolute',
+        top: '20px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        zIndex: 10
+      }}>
+        <BaseStyleSelector currentStyle={baseStyle} onStyleChange={handleBaseStyleChange} />
+      </div>
       <div style={{
         position: 'absolute',
         top: '20px',
